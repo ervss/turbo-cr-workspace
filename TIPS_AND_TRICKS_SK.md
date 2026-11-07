@@ -1,6 +1,27 @@
 # Turbo.cr Workspace (Samostatná verzia) — Tipy, triky a novinky
 
-Tento návod a prehľad funkcií je určený pre používateľov **Turbo.cr Workspace (Standalone Edition v2.0.0)** od **[ervss](https://github.com/ervss)**.
+Tento návod a prehľad funkcií je určený pre používateľov **Turbo.cr Workspace (Standalone Edition v2.1.0)** od **[ervss](https://github.com/ervss)**.
+
+---
+
+## 🆕 Čo je nové vo verzii 2.1.0?
+
+1. **📂 Funkcia "Spoločný Album / Galéria" (Merged Gallery):**
+   - Na stránke `/library` si zaškrtni ľubovoľné albumy (napr. 5, 10 alebo všetkých 15 na stránke pomocou tlačidiel `TOP 20` alebo `Visible`).
+   - V plávajúcom paneli sa ti aktivuje veľké gradientové tlačidlo **`📂 Spoločný Album / Merged Gallery (X)`**.
+   - Po kliknutí skript automaticky overí a dočíta metadáta z vybraných albumov a **otvorí všetky ich videá spojené v jednej spoločnej galérii / Quick Peek okne**!
+   - Každé video má priamo na karte označenie albumu (napr. `📁 ModelPOV: Kelly Vet`), z ktorého pochádza.
+   - Vyhľadávacie pole v spoločnom albume dokáže filtrovať nielen podľa názvu videa, ale aj podľa názvu albumu.
+   - Z tohto spoločného albumu môžeš vybrané videá spustiť priamo vo viacnásobnom okne **`📺 Split-Screen`**, vyexportovať spoločný **`.M3U` playlist** pre VLC/MPV, alebo stiahnuť **`.JSON`**.
+
+2. **🎯 Oprava selektora v ľavom hornom rohu náhľadu:**
+   - Selektor (štvorček s fajkou `[✔]`) v ľavom hornom rohu náhľadu každej karty bol kompletne prepracovaný.
+   - Teraz spoľahlivo funguje **označovanie aj odznačovanie (deselect)** jedným kliknutím priamo na štvorček alebo jeho obal.
+   - Vybrané karty majú smaragdovozelený svietiaci indikátor a modrý obrys celej karty.
+   - Podporovaný je aj rýchly výber rozsahu kariet pomocou klávesy <kbd>Shift</kbd> + kliknutie na selektor.
+
+3. **⌨️ Univerzálne zatváranie cez klávesu Escape:**
+   - Klávesa <kbd>Esc</kbd> teraz okamžite zatvorí otvorené okná (Spoločný album, Quick Peek, Split-Screen, Históriu) aj vtedy, keď máš kurzor aktívny vo vyhľadávacom poli.
 
 ---
 

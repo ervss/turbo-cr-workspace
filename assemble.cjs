@@ -322,7 +322,7 @@ const extraCss = `
     cursor: not-allowed;
 }
 
-/* Bulletproof Library Card Overlays & Hitboxes (v2.0.1 fixes) */
+/* Bulletproof Library Card Overlays & Hitboxes (v2.1.0 fixes) */
 .alb.is-selected {
     outline: 3px solid #58a6ff !important;
     outline-offset: 2px !important;
@@ -335,20 +335,27 @@ const extraCss = `
     left: 8px !important;
     z-index: 35 !important;
     background: rgba(13, 17, 23, 0.92) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.4) !important;
     border-radius: 6px !important;
-    padding: 4px !important;
+    padding: 3px !important;
     cursor: pointer !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7) !important;
-    transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.8) !important;
+    transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease !important;
+    user-select: none !important;
 }
 .nexus-turbo-album-chk-wrap:hover {
-    transform: scale(1.12) !important;
+    transform: scale(1.15) !important;
     background: #1f6feb !important;
     border-color: #58a6ff !important;
+}
+.alb.is-selected .nexus-turbo-album-chk-wrap,
+.nexus-turbo-album-chk-wrap[aria-checked="true"] {
+    background: #238636 !important;
+    border-color: #2ea043 !important;
+    box-shadow: 0 0 10px rgba(46, 160, 67, 0.8) !important;
 }
 .nexus-turbo-album-chk {
     width: 18px !important;
@@ -356,7 +363,28 @@ const extraCss = `
     cursor: pointer !important;
     accent-color: #2ea043 !important;
     margin: 0 !important;
-    pointer-events: auto !important;
+    pointer-events: none !important;
+}
+
+.nexus-turbo-peek-album-badge {
+    font-size: 11px;
+    background: rgba(88, 166, 255, 0.15);
+    color: #58a6ff;
+    border: 1px solid rgba(88, 166, 255, 0.3);
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-left: 6px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+.nexus-turbo-peek-card-album {
+    font-size: 10.5px;
+    color: #58a6ff;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: 2px;
+    font-weight: 500;
 }
 
 .nexus-turbo-badge-peek {

@@ -137,46 +137,87 @@ const path = require('node:path');
     assert.match(badgeText, /UHD|FHD|HD|SD/i);
     console.log('✓ 3. Background scan completed; badges updated with video count & quality tags');
 
-    // 4. Test Selection (Shift+Click)
-    console.log('Testing Shift+Click range selection on album cards...');
-    await cards.nth(0).locator('.nexus-turbo-album-chk').click();
-    await cards.nth(1).locator('.nexus-turbo-album-chk').click({ modifiers: ['Shift'] });
-    const countText = await toolbar.locator('.nexus-turbo-count').innerText();
-    assert.match(countText, /2 \/ 3 albums/);
-    console.log('✓ 4. Shift+Click range selection selected 2 albums');
+    // 4. Test Selection & Deselection (Checkbox Wrap & Shift+Click)
+    console.log('Testing Selection and Deselection on album cards...');
+    const firstChkWrap = cards.nth(0).locator('.nexus-turbo-album-chk-wrap');
+    await firstChkWrap.click();
+    let countText = await toolbar.locator('.nexus-turbo-count').innerText();
+    assert.match(countText, /1 \/ 3 albums/);
+    console.log('✓ 4a. Checkbox wrap click selected 1 album');
 
-    // 5. Test Quick Peek Modal
-    console.log('Testing Quick Peek modal on first album...');
+    // Test deselect on clicking the same checkbox wrap
+    await firstChkWrap.click();
+    countText = await toolbar.locator('.nexus-turbo-count').innerText();
+    assert.match(countText, /0 \/ 3 albums/);
+    console.log('✓ 4b. Re-clicking checkbox wrap deselected album successfully');
+
+    // Shift+Click range selection (select first and second album)
+    await cards.nth(0).locator('.nexus-turbo-album-chk-wrap').click();
+    await cards.nth(1).locator('.nexus-turbo-album-chk-wrap').click({ modifiers: ['Shift'] });
+    countText = await toolbar.locator('.nexus-turbo-count').innerText();
+    assert.match(countText, /2 \/ 3 albums/);
+    console.log('✓ 4c. Shift+Click range selection selected 2 albums');
+
+    // 5. Test Merged Multi-Album Gallery ("Spoločný Album")
+    console.log('Testing Merged Multi-Album Gallery button...');
+    const mergedBtn = toolbar.locator('#nexus-turbo-btn-merged');
+    await mergedBtn.waitFor({ state: 'visible' });
+    assert.strictEqual(await mergedBtn.isEnabled(), true, 'Merged button must be enabled when albums are selected');
+    await mergedBtn.click();
+
+    const mergedModal = page.locator('#nexus-turbo-peek-modal');
+    await mergedModal.waitFor({ state: 'visible', timeout: 5000 });
+    const mergedHeader = await mergedModal.locator('.nexus-turbo-peek-header h3').innerText();
+    assert.match(mergedHeader, /Merged Collection/i);
+    assert.match(mergedHeader, /2 albums/i);
+
+    const mergedCards = mergedModal.locator('.nexus-turbo-peek-card');
+    assert.strictEqual(await mergedCards.count(), 3, 'Merged album should contain 3 videos across both albums (2 from alb01 + 1 from alb02)');
+    const albumBadge = mergedCards.nth(0).locator('.nexus-turbo-peek-card-album');
+    assert.strictEqual(await albumBadge.isVisible(), true, 'Video cards in merged view must display parent album tag');
+
+    // Test search filter in Merged View
+    const searchInput = mergedModal.locator('#nexus-turbo-peek-search');
+    await searchInput.fill('Beach');
+    const filteredCount = await mergedModal.locator('.nexus-turbo-peek-card').count();
+    assert.strictEqual(filteredCount, 1, 'Search filter must find matching video');
+    await searchInput.fill('');
+
+    // Close Merged Modal
+    await page.keyboard.press('Escape');
+    await mergedModal.waitFor({ state: 'detached', timeout: 3000 });
+    console.log('✓ 5. Merged Multi-Album Gallery successfully aggregated 3 videos from 2 selected albums with search and album tags');
+
+    // 6. Test Single Album Quick Peek Modal
+    console.log('Testing Single Album Quick Peek modal on first album...');
     await firstCard.locator('.nexus-turbo-badge-peek').click();
     const peekModal = page.locator('#nexus-turbo-peek-modal');
     await peekModal.waitFor({ state: 'visible', timeout: 4000 });
     const peekCards = peekModal.locator('.nexus-turbo-peek-card');
     assert.strictEqual(await peekCards.count(), 2);
-    console.log('✓ 5. Quick Peek modal opened with 2 video cards');
+    console.log('✓ 6. Single album Quick Peek modal opened with 2 video cards');
 
-    // 6. Test Quick Peek Layout Switching
+    // 7. Test Quick Peek Layout Switching
     console.log('Testing layout switcher in Quick Peek...');
     await peekModal.locator('[data-peek-layout="4x3"]').click();
     assert.strictEqual(await peekModal.locator('#nexus-turbo-peek-grid').getAttribute('data-layout'), '4x3');
     await peekModal.locator('[data-peek-layout="list"]').click();
     assert.strictEqual(await peekModal.locator('#nexus-turbo-peek-grid').getAttribute('data-layout'), 'list');
-    console.log('✓ 6. Layout switcher changed grid layout successfully');
+    console.log('✓ 7. Layout switcher changed grid layout successfully');
 
-    // 7. Test Built-in Split-Screen from Quick Peek
+    // 8. Test Built-in Split-Screen from Quick Peek
     console.log('Testing Split-Screen launch from Quick Peek...');
-    console.log('Split button text:', await peekModal.locator('#nexus-turbo-peek-btn-split').innerText());
-    console.log('Peek count text:', await peekModal.locator('#nexus-turbo-peek-count').innerText());
     await peekModal.locator('#nexus-turbo-peek-btn-split').click();
     const splitModal = page.locator('#nexus-turbo-split-modal');
     await splitModal.waitFor({ state: 'visible', timeout: 4000 });
     const splitTiles = splitModal.locator('.nexus-turbo-split-tile');
     assert.strictEqual(await splitTiles.count(), 2);
-    console.log('✓ 7. Built-in Multi-Video Split-Screen rendered 2 concurrent video tiles');
+    console.log('✓ 8. Built-in Multi-Video Split-Screen rendered 2 concurrent video tiles');
 
     // Close Split-Screen with Escape
     await page.keyboard.press('Escape');
     await splitModal.waitFor({ state: 'detached', timeout: 3000 });
-    console.log('✓ 8. Split-Screen modal closed via Escape key');
+    console.log('✓ 9. Split-Screen modal closed via Escape key');
 
     // Close Quick Peek modal with Escape
     await page.keyboard.press('Escape');

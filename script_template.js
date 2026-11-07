@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Turbo.cr Library & Album Workspace (Standalone Edition)
 // @namespace    https://github.com/ervss/turbo-cr-workspace
-// @version      2.0.1
-// @description  Standalone power-user workspace for Turbo.cr: cinema widescreen grid, multi-page library scanner, bitrate quality tags (4K/1080p/720p/SD), Quick Peek modal with layouts, direct stream resolver, built-in multi-video split-screen, .M3U8 playlist & JSON export, and offline IndexedDB history vault. No external server required!
+// @version      2.1.0
+// @description  Standalone power-user workspace for Turbo.cr: cinema widescreen grid, multi-page library scanner, bitrate quality tags (4K/1080p/720p/SD), Quick Peek & Merged Multi-Album Gallery, direct stream resolver, built-in multi-video split-screen, .M3U8 playlist & JSON export, and offline IndexedDB history vault. No external server required!
 // @author       ervss (https://github.com/ervss)
 // @license      MIT
 // @homepageURL  https://github.com/ervss/turbo-cr-workspace
@@ -50,7 +50,7 @@
     if (!/(^|\.)turbo\.cr$/i.test(location.hostname)) return;
 
     console.log(
-        '%c[Turbo Workspace v2.0.1 by ervss]%c Loaded — Standalone Edition (https://github.com/ervss/turbo-cr-workspace)',
+        '%c[Turbo Workspace v2.1.0 by ervss]%c Loaded — Standalone Edition (https://github.com/ervss/turbo-cr-workspace)',
         'color: #58a6ff; font-weight: bold',
         'color: #aaa'
     );
@@ -827,7 +827,7 @@
                     <button type="button" class="nexus-turbo-min-btn" data-close-help style="font-size:18px;">✕</button>
                 </div>
                 <div class="nexus-turbo-help-body">
-                    <p>Welcome to <b>Turbo.cr Workspace (Standalone Edition v2.0.1)</b> by <a href="https://github.com/ervss" target="_blank" style="color:#58a6ff;">ervss</a>. Works entirely inside your browser with no local backend required!</p>
+                    <p>Welcome to <b>Turbo.cr Workspace (Standalone Edition v2.1.0)</b> by <a href="https://github.com/ervss" target="_blank" style="color:#58a6ff;">ervss</a>. Works entirely inside your browser with no local backend required!</p>
 
                     <h4 style="margin:16px 0 8px;color:#f0f6fc;">⌨️ Keyboard Shortcuts</h4>
                     <table class="nexus-turbo-help-table">
@@ -857,7 +857,7 @@
                     </ul>
 
                     <div style="margin-top:20px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#8b949e;">
-                        <span>Version 2.0.1 · MIT License</span>
+                        <span>Version 2.1.0 · MIT License</span>
                         <a href="https://github.com/ervss/turbo-cr-workspace" target="_blank" style="color:#58a6ff;text-decoration:none;">GitHub Repository ↗</a>
                     </div>
                 </div>
@@ -1077,7 +1077,7 @@
             });
             const query = peekSearchQuery.toLowerCase();
             const filteredFiles = query
-                ? allFiles.filter(f => (f.name || '').toLowerCase().includes(query) || (f.id || '').toLowerCase().includes(query))
+                ? allFiles.filter(f => (f.name || '').toLowerCase().includes(query) || (f.id || '').toLowerCase().includes(query) || (f.albumTitle || '').toLowerCase().includes(query))
                 : allFiles;
 
             if (!filteredFiles.length) {
@@ -1100,7 +1100,10 @@
                             <span class="nexus-turbo-peek-play-btn" style="width:28px;height:28px;font-size:12px;">▶</span>
                         </div>
                         <div class="nexus-turbo-peek-details">
-                            <div class="nexus-turbo-peek-name" title="${escapeHtml(f.name)}">${escapeHtml(f.name)}</div>
+                            <div class="nexus-turbo-peek-name" title="${escapeHtml(f.name)}">
+                                ${escapeHtml(f.name)}
+                                ${f.albumTitle ? `<span class="nexus-turbo-peek-album-badge" title="Album: ${escapeHtml(f.albumTitle)}">📁 ${escapeHtml(f.albumTitle)}</span>` : ''}
+                            </div>
                             <div class="nexus-turbo-peek-sub">
                                 <span>📦 ${formatBytes(f.size)}</span>
                                 <span>⏱️ ${f.dur > 0 ? formatDuration(f.dur) : '—'}</span>
@@ -1129,6 +1132,7 @@
                             </div>
                         </div>
                         <div class="nexus-turbo-peek-card-body">
+                            ${f.albumTitle ? `<div class="nexus-turbo-peek-card-album" title="Album: ${escapeHtml(f.albumTitle)}">📁 ${escapeHtml(f.albumTitle)}</div>` : ''}
                             <div class="nexus-turbo-peek-card-title" title="${escapeHtml(f.name)}">${escapeHtml(f.name)}</div>
                             <div class="nexus-turbo-peek-card-actions">
                                 <button type="button" class="nexus-turbo-btn-sub" data-copy-single="${escapeHtml(f.id)}" title="Copy Watch URL">
@@ -1204,8 +1208,12 @@
 
         // Click Delegation on Grid (Checkboxes, Shift+Click, Play, Copy)
         gridEl.addEventListener('click', (e) => {
-            const chk = e.target.closest('[data-file-chk]');
+            const chkWrap = e.target.closest('.nexus-turbo-peek-chk-wrap');
+            const chk = e.target.closest('[data-file-chk]') || chkWrap?.querySelector('[data-file-chk]');
             if (chk) {
+                if (chkWrap && !e.target.closest('[data-file-chk]')) {
+                    chk.checked = !chk.checked;
+                }
                 const fId = chk.getAttribute('data-file-chk');
                 const card = chk.closest('.nexus-turbo-peek-card, .nexus-turbo-peek-item');
                 const currIdx = parseInt(card?.dataset.fileIndex || '-1', 10);
@@ -1343,11 +1351,42 @@
 
             const strip = card.querySelector('.strip, .relative') || card;
 
+            // 1. Checkbox Overlay (standard robust wrapper)
+            let chkWrap = card.querySelector('.nexus-turbo-album-chk-wrap');
+            let chk = card.querySelector('.nexus-turbo-album-chk');
+            if (!chkWrap) {
+                chkWrap = document.createElement('div');
+                chkWrap.className = 'nexus-turbo-album-chk-wrap';
+                chkWrap.setAttribute('role', 'checkbox');
+                chkWrap.title = `Select/Deselect: ${album.title}`;
+                chk = document.createElement('input');
+                chk.type = 'checkbox';
+                chk.className = 'nexus-turbo-album-chk';
+                chk.title = `Select/Deselect: ${album.title}`;
+                chk.tabIndex = -1;
+                chkWrap.appendChild(chk);
+                strip.appendChild(chkWrap);
+            }
+            album.chkEl = chk;
+            chk.checked = !!album.selected;
+            chkWrap.setAttribute('aria-checked', album.selected ? 'true' : 'false');
+            card.classList.toggle('is-selected', !!album.selected);
+
+            chkWrap.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            };
+            chk.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            };
+
             // Selection toggle helper
             const toggleAlbumSelection = (wantState, isShift = false) => {
                 const target = (typeof wantState === 'boolean') ? wantState : !album.selected;
                 album.selected = target;
                 if (album.chkEl) album.chkEl.checked = target;
+                if (chkWrap) chkWrap.setAttribute('aria-checked', target ? 'true' : 'false');
                 card.classList.toggle('is-selected', target);
 
                 if (isShift && libState.lastSelectedAlbumIndex !== -1) {
@@ -1359,36 +1398,16 @@
                         if (a && a.visible !== false) {
                             a.selected = target;
                             if (a.chkEl) a.chkEl.checked = target;
-                            if (a.cardEl) a.cardEl.classList.toggle('is-selected', target);
+                            if (a.cardEl) {
+                                a.cardEl.classList.toggle('is-selected', target);
+                                const wrap = a.cardEl.querySelector('.nexus-turbo-album-chk-wrap');
+                                if (wrap) wrap.setAttribute('aria-checked', target ? 'true' : 'false');
+                            }
                         }
                     }
                 }
                 libState.lastSelectedAlbumIndex = album.index;
                 updateLibraryToolbar();
-            };
-
-            // 1. Checkbox Overlay (standard <label> wrapper)
-            let chkWrap = card.querySelector('.nexus-turbo-album-chk-wrap');
-            let chk = card.querySelector('.nexus-turbo-album-chk');
-            if (!chkWrap) {
-                chkWrap = document.createElement('label');
-                chkWrap.className = 'nexus-turbo-album-chk-wrap';
-                chk = document.createElement('input');
-                chk.type = 'checkbox';
-                chk.className = 'nexus-turbo-album-chk';
-                chk.title = `Select album: ${album.title}`;
-                chkWrap.appendChild(chk);
-                strip.appendChild(chkWrap);
-            }
-            album.chkEl = chk;
-            chk.checked = !!album.selected;
-            card.classList.toggle('is-selected', !!album.selected);
-
-            chk.onchange = (e) => {
-                toggleAlbumSelection(chk.checked, e.shiftKey);
-            };
-            chkWrap.onclick = (e) => {
-                e.stopPropagation();
             };
 
             // 2. Quick Peek Button
@@ -1441,9 +1460,12 @@
                         openAlbumQuickPeek(album);
                         return;
                     }
-                    // Checkbox wrapper clicked -> stop propagation to prevent <a> navigation
-                    if (e.target.closest('.nexus-turbo-album-chk-wrap')) {
+                    // Checkbox or Checkbox wrapper clicked -> Directly toggle selection and prevent <a> navigation
+                    if (e.target.closest('.nexus-turbo-album-chk-wrap, .nexus-turbo-album-chk')) {
+                        e.preventDefault();
                         e.stopPropagation();
+                        e.stopImmediatePropagation();
+                        toggleAlbumSelection(!album.selected, e.shiftKey);
                         return;
                     }
                     // Thumbnail strip or badge clicked -> Select / Deselect album!
@@ -1656,7 +1678,11 @@
             const want = selectedCount < count;
             album.selected = want;
             if (album.chkEl) album.chkEl.checked = want;
-            if (album.cardEl) album.cardEl.classList.toggle('is-selected', want);
+            if (album.cardEl) {
+                album.cardEl.classList.toggle('is-selected', want);
+                const wrap = album.cardEl.querySelector('.nexus-turbo-album-chk-wrap');
+                if (wrap) wrap.setAttribute('aria-checked', want ? 'true' : 'false');
+            }
             if (want) selectedCount++;
         });
         if (libState.filterOnlySelected) {
@@ -1672,7 +1698,11 @@
         targetAlbums.forEach((album) => {
             album.selected = select;
             if (album.chkEl) album.chkEl.checked = select;
-            if (album.cardEl) album.cardEl.classList.toggle('is-selected', select);
+            if (album.cardEl) {
+                album.cardEl.classList.toggle('is-selected', select);
+                const wrap = album.cardEl.querySelector('.nexus-turbo-album-chk-wrap');
+                if (wrap) wrap.setAttribute('aria-checked', select ? 'true' : 'false');
+            }
         });
         if (libState.filterOnlySelected) {
             applyLibraryFilterAndSort();
@@ -1699,6 +1729,40 @@
             });
         });
         return { selected, files };
+    }
+
+    async function openMergedAlbumsViewer() {
+        const { selected } = getAllFilesFromSelectedAlbums();
+        if (!selected.length) {
+            toast('⚠️ Please select at least 1 album first!', true);
+            return;
+        }
+
+        await ensureSelectedAlbumsScanned(selected);
+        const { files } = getAllFilesFromSelectedAlbums();
+
+        if (!files.length) {
+            toast('⚠️ No video files found in selected albums.', true);
+            return;
+        }
+
+        const totalBytes = files.reduce((acc, f) => acc + (f.size || 0), 0);
+
+        const mergedAlbum = {
+            id: 'merged_' + Date.now(),
+            isMerged: true,
+            title: `Merged Collection (${selected.length} albums · ${files.length} videos)`,
+            url: window.location.href,
+            videoCount: files.length,
+            totalBytes: totalBytes,
+            avgBytes: Math.round(totalBytes / files.length),
+            avgDuration: 0,
+            files: files.map(f => ({ ...f, selected: true })),
+            scanned: true,
+            selected: true,
+        };
+
+        openAlbumQuickPeek(mergedAlbum);
     }
 
     function updateLibraryToolbar() {
@@ -1767,6 +1831,11 @@
 
         const splitBtn = toolbar.querySelector('#nexus-turbo-btn-split');
         if (splitBtn) splitBtn.disabled = selectedCount === 0;
+
+        const mergedBtn = toolbar.querySelector('#nexus-turbo-btn-merged');
+        if (mergedBtn) mergedBtn.disabled = selectedCount === 0;
+        const mergedCountEl = toolbar.querySelector('#nexus-turbo-merged-count');
+        if (mergedCountEl) mergedCountEl.textContent = selectedCount;
 
         updateBubbleBadge();
     }
@@ -1900,12 +1969,18 @@
                     </button>
                 </div>
 
+                <div class="nexus-turbo-btn-group" style="margin-top:4px;">
+                    <button class="nexus-turbo-btn-main" id="nexus-turbo-btn-merged" disabled style="flex:1.4;background:linear-gradient(135deg, #1f6feb 0%, #238636 100%);color:#fff;font-weight:700;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid rgba(255,255,255,0.2);box-shadow:0 2px 10px rgba(31,111,235,0.4);" title="Open all videos from selected albums together in one interactive gallery">
+                        📂 Merged Gallery (<span id="nexus-turbo-merged-count">0</span>)
+                    </button>
+                    <button class="nexus-turbo-btn-split" id="nexus-turbo-btn-split" disabled style="flex:1;" title="Open selected albums in Split-Screen player">
+                        📺 Split-Screen
+                    </button>
+                </div>
+
                 <div class="nexus-turbo-btn-group" style="margin-top:2px;">
                     <button class="nexus-turbo-btn-sub" id="nexus-turbo-history-btn" style="flex:1" title="Browse offline IndexedDB history vault">
                         📜 History (<span id="nexus-turbo-history-count">0</span>)
-                    </button>
-                    <button class="nexus-turbo-btn-split" id="nexus-turbo-btn-split" disabled title="Open selected albums in Split-Screen player">
-                        📺 Split-Screen
                     </button>
                 </div>
 
@@ -2008,6 +2083,10 @@
         el.querySelector('#nexus-turbo-load-5-btn').addEventListener('click', () => loadNextPage(5));
 
         // Export Actions
+        el.querySelector('#nexus-turbo-btn-merged')?.addEventListener('click', () => {
+            openMergedAlbumsViewer();
+        });
+
         el.querySelector('#nexus-turbo-btn-split').addEventListener('click', async () => {
             const { selected, files } = getAllFilesFromSelectedAlbums();
             await ensureSelectedAlbumsScanned(selected);
@@ -2196,7 +2275,7 @@
         modal.querySelector('#nexus-turbo-history-export').addEventListener('click', () => {
             const payload = {
                 generator: 'Turbo.cr Workspace by ervss',
-                version: '2.0.1',
+                version: '2.1.0',
                 exportedAt: new Date().toISOString(),
                 albums,
             };
@@ -2915,6 +2994,22 @@
     // ── 19. Global Keyboard Shortcuts Listener ─────────────────────
     function installKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const peek = document.getElementById(PEEK_ID);
+                if (peek) { peek.remove(); return; }
+                const player = document.getElementById(PLAYER_ID);
+                if (player) { player.remove(); return; }
+                const split = document.getElementById(SPLIT_ID);
+                if (split) { split.remove(); return; }
+                const hist = document.getElementById(HISTORY_ID);
+                if (hist) { hist.remove(); return; }
+                const help = document.getElementById(HELP_ID);
+                if (help) { help.remove(); return; }
+                const gallery = document.getElementById(GALLERY_ID);
+                if (gallery && !gallery.hidden) { setGalleryOpen(false); return; }
+                return;
+            }
+
             if (e.target.matches('input, textarea, select')) return;
 
             if (e.key === '?') {
@@ -2976,21 +3071,6 @@
                     loadNextPage(1);
                 }
                 return;
-            }
-
-            if (e.key === 'Escape') {
-                const peek = document.getElementById(PEEK_ID);
-                if (peek) { peek.remove(); return; }
-                const player = document.getElementById(PLAYER_ID);
-                if (player) { player.remove(); return; }
-                const split = document.getElementById(SPLIT_ID);
-                if (split) { split.remove(); return; }
-                const hist = document.getElementById(HISTORY_ID);
-                if (hist) { hist.remove(); return; }
-                const help = document.getElementById(HELP_ID);
-                if (help) { help.remove(); return; }
-                const gallery = document.getElementById(GALLERY_ID);
-                if (gallery && !gallery.hidden) { setGalleryOpen(false); return; }
             }
         });
     }
