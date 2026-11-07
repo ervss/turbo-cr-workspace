@@ -1,13 +1,18 @@
 # Turbo.cr Library & Album Workspace (Standalone Edition)
 
-[![Version](https://img.shields.io/badge/version-2.0.0-22c55e.svg)](https://github.com/ervss/turbo-cr-workspace)
+[![Version](https://img.shields.io/badge/version-2.0.1-22c55e.svg)](https://github.com/ervss/turbo-cr-workspace)
 [![Author](https://img.shields.io/badge/author-ervss-8b5cf6.svg)](https://github.com/ervss)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Install Userscript](https://img.shields.io/badge/Install-Tampermonkey%20%2F%20Violentmonkey-brightgreen?logo=tampermonkey)](https://raw.githubusercontent.com/ervss/turbo-cr-workspace/main/turbo-library-workspace-standalone.user.js)
 
 Created by **[ervss](https://github.com/ervss)** — **Turbo.cr Workspace** is a high-performance, standalone userscript that transforms [Turbo.cr](https://turbo.cr/library) into an ultra-responsive, cinema-widescreen media exploration and curation workspace.
 
-This **Standalone Edition (v2.0.0)** runs **100% inside your browser**—no Chrome extension runtime, local Python server, or companion apps required.
+This **Standalone Edition (v2.0.1)** runs **100% inside your browser**—no Chrome extension runtime, local Python server, or companion apps required.
+
+### 🆕 What's New in v2.0.1
+- 👁️ **Quick Peek Fix:** Resolved event propagation conflict on Turbo.cr cards—clicking the eye button (`👁️`) now reliably opens the Quick Peek modal with 100% responsiveness.
+- 🎯 **Card-Level Selection & Checkbox Hitbox:** Cards can now be selected directly by clicking anywhere on the thumbnail strip or checkbox wrapper (`<label>`). Navigation to the album `/a/<id>` is preserved when clicking the title text below.
+- ⏱️ **Graceful Duration Fallback (`Ø —`):** Turbo.cr backend returns `dur: 0` for certain uploads (e.g. `.mov` imports). Replaced misleading `0:00` display with a graceful `Ø —` indicator and informational tooltip.
 
 ---
 

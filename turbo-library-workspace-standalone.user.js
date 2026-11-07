@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Turbo.cr Library & Album Workspace (Standalone Edition)
 // @namespace    https://github.com/ervss/turbo-cr-workspace
-// @version      2.0.0
+// @version      2.0.1
 // @description  Standalone power-user workspace for Turbo.cr: cinema widescreen grid, multi-page library scanner, bitrate quality tags (4K/1080p/720p/SD), Quick Peek modal with layouts, direct stream resolver, built-in multi-video split-screen, .M3U8 playlist & JSON export, and offline IndexedDB history vault. No external server required!
 // @author       ervss (https://github.com/ervss)
 // @license      MIT
@@ -50,7 +50,7 @@
     if (!/(^|\.)turbo\.cr$/i.test(location.hostname)) return;
 
     console.log(
-        '%c[Turbo Workspace v2.0.0 by ervss]%c Loaded — Standalone Edition (https://github.com/ervss/turbo-cr-workspace)',
+        '%c[Turbo Workspace v2.0.1 by ervss]%c Loaded — Standalone Edition (https://github.com/ervss/turbo-cr-workspace)',
         'color: #58a6ff; font-weight: bold',
         'color: #aaa'
     );
@@ -2356,6 +2356,66 @@ div.strip {
     opacity: 0.35;
     cursor: not-allowed;
 }
+
+/* Bulletproof Library Card Overlays & Hitboxes (v2.0.1 fixes) */
+.alb.is-selected {
+    outline: 3px solid #58a6ff !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 18px rgba(88, 166, 255, 0.5) !important;
+}
+
+.nexus-turbo-album-chk-wrap {
+    position: absolute !important;
+    top: 8px !important;
+    left: 8px !important;
+    z-index: 35 !important;
+    background: rgba(13, 17, 23, 0.92) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    border-radius: 6px !important;
+    padding: 4px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7) !important;
+    transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease !important;
+}
+.nexus-turbo-album-chk-wrap:hover {
+    transform: scale(1.12) !important;
+    background: #1f6feb !important;
+    border-color: #58a6ff !important;
+}
+.nexus-turbo-album-chk {
+    width: 18px !important;
+    height: 18px !important;
+    cursor: pointer !important;
+    accent-color: #2ea043 !important;
+    margin: 0 !important;
+    pointer-events: auto !important;
+}
+
+.nexus-turbo-badge-peek {
+    position: absolute !important;
+    top: 8px !important;
+    right: 8px !important;
+    z-index: 35 !important;
+    background: rgba(13, 17, 23, 0.92) !important;
+    border: 1px solid rgba(88, 166, 255, 0.6) !important;
+    border-radius: 8px !important;
+    padding: 4px 8px !important;
+    font-size: 14px !important;
+    cursor: pointer !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7) !important;
+    backdrop-filter: blur(6px) !important;
+    transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease !important;
+    user-select: none !important;
+}
+.nexus-turbo-badge-peek:hover {
+    transform: scale(1.15) !important;
+    background: #1f6feb !important;
+    border-color: #58a6ff !important;
+    color: #fff !important;
+}
 `;
         (document.head || document.documentElement).appendChild(style);
     }
@@ -2471,9 +2531,10 @@ div.strip {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     }
 
-    function formatDuration(value) {
+    function formatDuration(value, fallback = '—') {
+        if (value === undefined || value === null) return fallback;
         const total = Math.max(0, Math.round(Number(value) || 0));
-        if (!total) return '0:00';
+        if (total <= 0) return fallback;
         const h = Math.floor(total / 3600);
         const m = Math.floor((total % 3600) / 60);
         const s = total % 60;
@@ -2845,7 +2906,11 @@ div.strip {
 
     function applyAlbumData(album, data) {
         album.scanned = true;
-        album.files = data.files || [];
+        const oldSelectedMap = new Map((album.files || []).map(f => [f.id, f.selected]));
+        album.files = (data.files || []).map(f => ({
+            ...f,
+            selected: oldSelectedMap.has(f.id) ? oldSelectedMap.get(f.id) : (f.selected !== undefined ? f.selected : true)
+        }));
         album.videoCount = album.files.length;
         album.totalBytes = album.files.reduce((acc, f) => acc + (f.size || 0), 0);
         album.avgBytes = album.videoCount > 0 ? Math.round(album.totalBytes / album.videoCount) : 0;
@@ -2858,6 +2923,10 @@ div.strip {
 
         if (album.badgeEl) {
             album.badgeEl.className = 'nexus-turbo-album-badge badge-done';
+            const durFormatted = album.avgDuration > 0 ? formatDuration(album.avgDuration) : '—';
+            const durTooltip = album.avgDuration > 0
+                ? `Average duration: ${durFormatted}`
+                : 'Duration not reported by Turbo.cr';
             album.badgeEl.innerHTML = `
                 <div class="badge-row-primary">
                     <span class="badge-stat">🎬 <b class="stat-hl">${album.videoCount} vids</b></span>
@@ -2866,7 +2935,7 @@ div.strip {
                 </div>
                 <div class="badge-row-secondary">
                     <span class="badge-stat">📊 Ø <b class="stat-purple">${formatBytes(album.avgBytes)}</b> / vid</span>
-                    <span class="badge-stat">⏱️ Ø <b class="stat-amber">${formatDuration(album.avgDuration)}</b></span>
+                    <span class="badge-stat" title="${durTooltip}">⏱️ Ø <b class="stat-amber">${durFormatted}</b></span>
                 </div>
             `;
         }
@@ -3054,7 +3123,7 @@ div.strip {
                     <button type="button" class="nexus-turbo-min-btn" data-close-help style="font-size:18px;">✕</button>
                 </div>
                 <div class="nexus-turbo-help-body">
-                    <p>Welcome to <b>Turbo.cr Workspace (Standalone Edition v2.0.0)</b> by <a href="https://github.com/ervss" target="_blank" style="color:#58a6ff;">ervss</a>. Works entirely inside your browser with no local backend required!</p>
+                    <p>Welcome to <b>Turbo.cr Workspace (Standalone Edition v2.0.1)</b> by <a href="https://github.com/ervss" target="_blank" style="color:#58a6ff;">ervss</a>. Works entirely inside your browser with no local backend required!</p>
 
                     <h4 style="margin:16px 0 8px;color:#f0f6fc;">⌨️ Keyboard Shortcuts</h4>
                     <table class="nexus-turbo-help-table">
@@ -3084,7 +3153,7 @@ div.strip {
                     </ul>
 
                     <div style="margin-top:20px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#8b949e;">
-                        <span>Version 2.0.0 · MIT License</span>
+                        <span>Version 2.0.1 · MIT License</span>
                         <a href="https://github.com/ervss/turbo-cr-workspace" target="_blank" style="color:#58a6ff;text-decoration:none;">GitHub Repository ↗</a>
                     </div>
                 </div>
@@ -3180,79 +3249,82 @@ div.strip {
     }
 
     async function openAlbumQuickPeek(album) {
-        if (!album.scanned || !album.files || !album.files.length) {
-            toast(`⏳ Fetching videos for album "${album.title}"...`);
-            await fetchAlbumMetadata(album);
-        }
+        try {
+            if (!album) return;
+            if (!album.scanned || !album.files || !album.files.length) {
+                toast(`⏳ Fetching videos for album "${album.title || album.id}"...`);
+                await fetchAlbumMetadata(album);
+            }
 
-        const oldModal = document.getElementById(PEEK_ID);
-        if (oldModal) oldModal.remove();
+            const oldModal = document.getElementById(PEEK_ID);
+            if (oldModal) oldModal.remove();
 
-        let currentLayout = localStorage.getItem(STORAGE_PEEK_LAYOUT_KEY) || '3x2';
-        let peekSearchQuery = '';
-        let peekVisibleLimit = 100;
-        const PEEK_BATCH_SIZE = 100;
+            let currentLayout = localStorage.getItem(STORAGE_PEEK_LAYOUT_KEY) || '3x2';
+            let peekSearchQuery = '';
+            let peekVisibleLimit = 100;
+            const PEEK_BATCH_SIZE = 100;
 
-        album.files.forEach((f) => {
-            if (f.selected === undefined) f.selected = true;
-        });
+            const allFiles = Array.isArray(album.files) ? album.files : [];
+            allFiles.forEach((f) => {
+                if (f.selected === undefined) f.selected = true;
+            });
 
-        const modal = document.createElement('div');
-        modal.id = PEEK_ID;
-        modal.innerHTML = `
-            <div class="nexus-turbo-peek-backdrop" data-close-peek></div>
-            <div class="nexus-turbo-peek-dialog" role="dialog" aria-modal="true">
-                <!-- Header -->
-                <div class="nexus-turbo-peek-header">
-                    <h3>📂 ${escapeHtml(album.title)} <span style="font-size:12px;color:#8b949e;font-weight:normal;">(${album.videoCount || 0} videos · ${formatBytes(album.totalBytes)})</span></h3>
-                    <div style="display:flex;align-items:center;gap:12px;">
-                        <div class="nexus-turbo-layout-group">
-                            <button type="button" class="nexus-turbo-layout-btn ${currentLayout === '3x2' ? 'is-active' : ''}" data-peek-layout="3x2" title="3 columns">▦ 3x2</button>
-                            <button type="button" class="nexus-turbo-layout-btn ${currentLayout === '4x3' ? 'is-active' : ''}" data-peek-layout="4x3" title="4 columns">▤ 4x3</button>
-                            <button type="button" class="nexus-turbo-layout-btn ${currentLayout === '2x2' ? 'is-active' : ''}" data-peek-layout="2x2" title="2 columns (large)">☷ 2x2</button>
-                            <button type="button" class="nexus-turbo-layout-btn ${currentLayout === 'list' ? 'is-active' : ''}" data-peek-layout="list" title="List view">☰ List</button>
+            const modal = document.createElement('div');
+            modal.id = PEEK_ID;
+            modal.innerHTML = `
+                <div class="nexus-turbo-peek-backdrop" data-close-peek></div>
+                <div class="nexus-turbo-peek-dialog" role="dialog" aria-modal="true">
+                    <!-- Header -->
+                    <div class="nexus-turbo-peek-header">
+                        <h3>📂 ${escapeHtml(album.title)} <span style="font-size:12px;color:#8b949e;font-weight:normal;">(${album.videoCount || allFiles.length} videos · ${formatBytes(album.totalBytes)})</span></h3>
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div class="nexus-turbo-layout-group">
+                                <button type="button" class="nexus-turbo-layout-btn ${currentLayout === '3x2' ? 'is-active' : ''}" data-peek-layout="3x2" title="3 columns">▦ 3x2</button>
+                                <button type="button" class="nexus-turbo-layout-btn ${currentLayout === '4x3' ? 'is-active' : ''}" data-peek-layout="4x3" title="4 columns">▤ 4x3</button>
+                                <button type="button" class="nexus-turbo-layout-btn ${currentLayout === '2x2' ? 'is-active' : ''}" data-peek-layout="2x2" title="2 columns (large)">☷ 2x2</button>
+                                <button type="button" class="nexus-turbo-layout-btn ${currentLayout === 'list' ? 'is-active' : ''}" data-peek-layout="list" title="List view">☰ List</button>
+                            </div>
+                            <button type="button" class="nexus-turbo-min-btn" data-close-peek style="font-size:18px;">✕</button>
                         </div>
-                        <button type="button" class="nexus-turbo-min-btn" data-close-peek style="font-size:18px;">✕</button>
                     </div>
+
+                    <!-- Action Toolbar -->
+                    <div class="nexus-turbo-peek-toolbar">
+                        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:#c9d1d9;">
+                                <input type="checkbox" id="nexus-turbo-peek-select-all" class="nexus-turbo-peek-chk" checked>
+                                <span>Select All</span>
+                            </label>
+                            <span id="nexus-turbo-peek-count" style="font-size:11.5px;color:#8b949e;">0 / 0 selected</span>
+                            <input type="text" id="nexus-turbo-peek-search" class="nexus-turbo-peek-search-input" placeholder="🔍 Filter in album...">
+                        </div>
+
+                        <div class="nexus-turbo-peek-actions">
+                            <button type="button" class="nexus-turbo-btn-split" id="nexus-turbo-peek-btn-split" title="Watch selected videos in Multi-Video Split-Screen">
+                                📺 Split-Screen (0)
+                            </button>
+                            <button type="button" class="nexus-turbo-btn-copy" id="nexus-turbo-peek-btn-copy-watch" title="Copy Watch URLs to clipboard">
+                                📋 Copy Watch URLs
+                            </button>
+                            <button type="button" class="nexus-turbo-btn-copy" id="nexus-turbo-peek-btn-copy-direct" title="Resolve and copy direct CDN stream links">
+                                🔗 Copy Direct Streams
+                            </button>
+                            <button type="button" class="nexus-turbo-btn-export" id="nexus-turbo-peek-btn-m3u" title="Export .M3U8 playlist for VLC / MPV / PotPlayer">
+                                🎵 Export .M3U
+                            </button>
+                            <button type="button" class="nexus-turbo-btn-export" id="nexus-turbo-peek-btn-json" title="Export structured JSON metadata">
+                                📄 Export JSON
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Gallery / Grid Container -->
+                    <div class="nexus-turbo-peek-grid" id="nexus-turbo-peek-grid" data-layout="${currentLayout}"></div>
+
+                    <!-- Pagination Footer Bar -->
+                    <div id="nexus-turbo-peek-pagination-container"></div>
                 </div>
-
-                <!-- Action Toolbar -->
-                <div class="nexus-turbo-peek-toolbar">
-                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:#c9d1d9;">
-                            <input type="checkbox" id="nexus-turbo-peek-select-all" class="nexus-turbo-peek-chk" checked>
-                            <span>Select All</span>
-                        </label>
-                        <span id="nexus-turbo-peek-count" style="font-size:11.5px;color:#8b949e;">0 / 0 selected</span>
-                        <input type="text" id="nexus-turbo-peek-search" class="nexus-turbo-peek-search-input" placeholder="🔍 Filter in album...">
-                    </div>
-
-                    <div class="nexus-turbo-peek-actions">
-                        <button type="button" class="nexus-turbo-btn-split" id="nexus-turbo-peek-btn-split" title="Watch selected videos in Multi-Video Split-Screen">
-                            📺 Split-Screen (0)
-                        </button>
-                        <button type="button" class="nexus-turbo-btn-copy" id="nexus-turbo-peek-btn-copy-watch" title="Copy Watch URLs to clipboard">
-                            📋 Copy Watch URLs
-                        </button>
-                        <button type="button" class="nexus-turbo-btn-copy" id="nexus-turbo-peek-btn-copy-direct" title="Resolve and copy direct CDN stream links">
-                            🔗 Copy Direct Streams
-                        </button>
-                        <button type="button" class="nexus-turbo-btn-export" id="nexus-turbo-peek-btn-m3u" title="Export .M3U8 playlist for VLC / MPV / PotPlayer">
-                            🎵 Export .M3U
-                        </button>
-                        <button type="button" class="nexus-turbo-btn-export" id="nexus-turbo-peek-btn-json" title="Export structured JSON metadata">
-                            📄 Export JSON
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Gallery / Grid Container -->
-                <div class="nexus-turbo-peek-grid" id="nexus-turbo-peek-grid" data-layout="${currentLayout}"></div>
-
-                <!-- Pagination Footer Bar -->
-                <div id="nexus-turbo-peek-pagination-container"></div>
-            </div>
-        `;
+            `;
 
         const gridEl = modal.querySelector('#nexus-turbo-peek-grid');
         const countEl = modal.querySelector('#nexus-turbo-peek-count');
@@ -3296,6 +3368,9 @@ div.strip {
         function renderPeekGrid() {
             gridEl.dataset.layout = currentLayout;
             const allFiles = album.files || [];
+            allFiles.forEach((f) => {
+                if (f.selected === undefined) f.selected = true;
+            });
             const query = peekSearchQuery.toLowerCase();
             const filteredFiles = query
                 ? allFiles.filter(f => (f.name || '').toLowerCase().includes(query) || (f.id || '').toLowerCase().includes(query))
@@ -3324,7 +3399,7 @@ div.strip {
                             <div class="nexus-turbo-peek-name" title="${escapeHtml(f.name)}">${escapeHtml(f.name)}</div>
                             <div class="nexus-turbo-peek-sub">
                                 <span>📦 ${formatBytes(f.size)}</span>
-                                <span>⏱️ ${formatDuration(f.dur)}</span>
+                                <span>⏱️ ${f.dur > 0 ? formatDuration(f.dur) : '—'}</span>
                             </div>
                         </div>
                         <button type="button" class="nexus-turbo-btn-sub" data-play-file="${escapeHtml(f.id)}">▶ Play</button>
@@ -3344,7 +3419,7 @@ div.strip {
                                 ▶
                             </div>
                             <div class="nexus-turbo-peek-meta-badge">
-                                <span>⏱️ ${formatDuration(f.dur)}</span>
+                                <span>⏱️ ${f.dur > 0 ? formatDuration(f.dur) : '—'}</span>
                                 <span>·</span>
                                 <span>📦 ${formatBytes(f.size)}</span>
                             </div>
@@ -3504,18 +3579,26 @@ div.strip {
         });
 
         modal.addEventListener('click', (e) => {
-            if (e.target.hasAttribute('data-close-peek') || e.target.closest('[data-close-peek]')) {
+            if (e.target.hasAttribute('data-close-peek') || e.target.closest('[data-close-peek]') || e.target === modal) {
                 modal.remove();
             }
         });
 
         document.body.appendChild(modal);
+        } catch (err) {
+            console.error('[Turbo Quick Peek Error]', err);
+            toast(`Failed to open Quick Peek: ${err.message}`, true);
+        }
     }
 
+    let isScanningLibrary = false;
     function scanLibraryAlbums() {
-        detectPaginationInfo();
-        const cards = document.querySelectorAll('a.alb[href*="/a/"]');
-        let added = 0;
+        if (isScanningLibrary) return 0;
+        isScanningLibrary = true;
+        try {
+            detectPaginationInfo();
+            const cards = document.querySelectorAll('a.alb[href*="/a/"]');
+            let added = 0;
 
         cards.forEach((card, index) => {
             const href = card.getAttribute('href') || '';
@@ -3523,87 +3606,88 @@ div.strip {
             if (!m) return;
             const id = m[1];
 
-            if (libState.albums.has(id)) {
-                const existing = libState.albums.get(id);
-                existing.cardEl = card;
-                return;
+            let album = libState.albums.get(id);
+            if (!album) {
+                const titleEl = card.querySelector('.truncate, [title], .font-medium') || card;
+                const title = (titleEl.getAttribute('title') || titleEl.textContent || `Album ${id}`).trim();
+                const fullUrl = href.startsWith('http') ? href : location.origin + href;
+
+                album = {
+                    id,
+                    title,
+                    url: fullUrl,
+                    cardEl: card,
+                    chkEl: null,
+                    badgeEl: null,
+                    peekBtn: null,
+                    scanned: false,
+                    files: [],
+                    videoCount: 0,
+                    totalBytes: 0,
+                    avgBytes: 0,
+                    avgDuration: 0,
+                    selected: false,
+                    visible: true,
+                    index,
+                };
+                libState.albums.set(id, album);
+                added++;
+            } else {
+                album.cardEl = card;
+                album.index = index;
             }
 
-            const titleEl = card.querySelector('.truncate, [title], .font-medium') || card;
-            const title = (titleEl.getAttribute('title') || titleEl.textContent || `Album ${id}`).trim();
-            const fullUrl = href.startsWith('http') ? href : location.origin + href;
+            const strip = card.querySelector('.strip, .relative') || card;
 
-            const album = {
-                id,
-                title,
-                url: fullUrl,
-                cardEl: card,
-                chkEl: null,
-                badgeEl: null,
-                scanned: false,
-                files: [],
-                videoCount: 0,
-                totalBytes: 0,
-                avgBytes: 0,
-                avgDuration: 0,
-                selected: false,
-                visible: true,
-                index,
-            };
+            // Selection toggle helper
+            const toggleAlbumSelection = (wantState, isShift = false) => {
+                const target = (typeof wantState === 'boolean') ? wantState : !album.selected;
+                album.selected = target;
+                if (album.chkEl) album.chkEl.checked = target;
+                card.classList.toggle('is-selected', target);
 
-            // Checkbox with Shift+Click support
-            let chkWrap = card.querySelector('.nexus-turbo-album-chk-wrap');
-            if (!chkWrap) {
-                chkWrap = document.createElement('div');
-                chkWrap.className = 'nexus-turbo-album-chk-wrap';
-                const chk = document.createElement('input');
-                chk.type = 'checkbox';
-                chk.className = 'nexus-turbo-album-chk';
-                chk.title = `Select album: ${title}`;
-                chkWrap.appendChild(chk);
-
-                chkWrap.addEventListener('click', (e) => e.stopPropagation());
-                chk.addEventListener('change', (e) => {
-                    const want = chk.checked;
-                    album.selected = want;
-                    card.classList.toggle('is-selected', want);
-
-                    if (e.shiftKey && libState.lastSelectedAlbumIndex !== -1) {
-                        const allAlbums = Array.from(libState.albums.values());
-                        const low = Math.min(libState.lastSelectedAlbumIndex, album.index);
-                        const high = Math.max(libState.lastSelectedAlbumIndex, album.index);
-                        for (let i = low; i <= high; i++) {
-                            const a = allAlbums[i];
-                            if (a && a.visible !== false) {
-                                a.selected = want;
-                                if (a.chkEl) a.chkEl.checked = want;
-                                if (a.cardEl) a.cardEl.classList.toggle('is-selected', want);
-                            }
+                if (isShift && libState.lastSelectedAlbumIndex !== -1) {
+                    const allAlbums = Array.from(libState.albums.values());
+                    const low = Math.min(libState.lastSelectedAlbumIndex, album.index);
+                    const high = Math.max(libState.lastSelectedAlbumIndex, album.index);
+                    for (let i = low; i <= high; i++) {
+                        const a = allAlbums[i];
+                        if (a && a.visible !== false) {
+                            a.selected = target;
+                            if (a.chkEl) a.chkEl.checked = target;
+                            if (a.cardEl) a.cardEl.classList.toggle('is-selected', target);
                         }
                     }
-                    libState.lastSelectedAlbumIndex = album.index;
-                    updateLibraryToolbar();
-                });
+                }
+                libState.lastSelectedAlbumIndex = album.index;
+                updateLibraryToolbar();
+            };
 
-                album.chkEl = chk;
-                const strip = card.querySelector('.strip, .relative') || card;
+            // 1. Checkbox Overlay (standard <label> wrapper)
+            let chkWrap = card.querySelector('.nexus-turbo-album-chk-wrap');
+            let chk = card.querySelector('.nexus-turbo-album-chk');
+            if (!chkWrap) {
+                chkWrap = document.createElement('label');
+                chkWrap.className = 'nexus-turbo-album-chk-wrap';
+                chk = document.createElement('input');
+                chk.type = 'checkbox';
+                chk.className = 'nexus-turbo-album-chk';
+                chk.title = `Select album: ${album.title}`;
+                chkWrap.appendChild(chk);
                 strip.appendChild(chkWrap);
             }
+            album.chkEl = chk;
+            chk.checked = !!album.selected;
+            card.classList.toggle('is-selected', !!album.selected);
 
-            // Metadata Badge
-            let badge = card.querySelector('.nexus-turbo-album-badge');
-            if (!badge) {
-                badge = document.createElement('div');
-                badge.className = 'nexus-turbo-album-badge';
-                badge.innerHTML = `<span class="badge-stat">⏳ Pending scan...</span>`;
-                album.badgeEl = badge;
-                const strip = card.querySelector('.strip, .relative') || card;
-                strip.appendChild(badge);
-            } else {
-                album.badgeEl = badge;
-            }
+            chk.onchange = (e) => {
+                toggleAlbumSelection(chk.checked, e.shiftKey);
+            };
+            chkWrap.onclick = (e) => {
+                e.stopPropagation();
+            };
 
-            // Quick Peek Button
+            // 2. Quick Peek Button
             let peek = card.querySelector('.nexus-turbo-badge-peek');
             if (!peek) {
                 peek = document.createElement('div');
@@ -3612,33 +3696,63 @@ div.strip {
                 peek.setAttribute('data-turbo', 'false');
                 peek.setAttribute('role', 'button');
                 peek.innerHTML = '👁️';
-
-                peek.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    openAlbumQuickPeek(album);
-                });
-                peek.addEventListener('mousedown', (e) => e.stopPropagation());
-                peek.addEventListener('pointerdown', (e) => e.stopPropagation());
-
-                album.peekBtn = peek;
-                const strip = card.querySelector('.strip, .relative') || card;
                 strip.appendChild(peek);
             }
+            album.peekBtn = peek;
 
-            // Prevent parent <a> link navigation when clicking inside custom overlays
-            if (!card.dataset.nexusProtected) {
-                card.dataset.nexusProtected = '1';
-                card.addEventListener('click', (e) => {
-                    if (e.target.closest('.nexus-turbo-badge-peek') || e.target.closest('.nexus-turbo-album-chk-wrap')) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    }
-                });
+            const onPeekClick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                openAlbumQuickPeek(album);
+            };
+            peek.onclick = onPeekClick;
+            peek.onmousedown = (e) => e.stopPropagation();
+            peek.onpointerdown = (e) => e.stopPropagation();
+
+            // 3. Metadata Badge
+            let badge = card.querySelector('.nexus-turbo-album-badge');
+            if (!badge) {
+                badge = document.createElement('div');
+                badge.className = 'nexus-turbo-album-badge';
+                badge.innerHTML = `<span class="badge-stat">⏳ Pending scan...</span>`;
+                strip.appendChild(badge);
+            }
+            album.badgeEl = badge;
+
+            if (album.scanned && !badge.classList.contains('badge-done')) {
+                applyAlbumData(album, album);
             }
 
-            libState.albums.set(id, album);
-            added++;
+            // 4. Card-Level Capture Listener:
+            // Intercepts clicks on custom overlays & thumbnail strip to prevent unwanted navigation
+            if (!card.dataset.nexusCardBound) {
+                card.dataset.nexusCardBound = '1';
+                card.addEventListener('click', (e) => {
+                    // Quick peek eye button clicked
+                    if (e.target.closest('.nexus-turbo-badge-peek')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                        openAlbumQuickPeek(album);
+                        return;
+                    }
+                    // Checkbox wrapper clicked -> stop propagation to prevent <a> navigation
+                    if (e.target.closest('.nexus-turbo-album-chk-wrap')) {
+                        e.stopPropagation();
+                        return;
+                    }
+                    // Thumbnail strip or badge clicked -> Select / Deselect album!
+                    if (e.target.closest('.strip, .thumb, .nexus-turbo-album-badge')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                        toggleAlbumSelection(!album.selected, e.shiftKey);
+                        return;
+                    }
+                    // Clicking title text in .p-2.5 opens album as normal
+                }, true);
+            }
 
             // Restore cached metadata
             try {
@@ -3665,6 +3779,9 @@ div.strip {
             updateOnPageShowingText();
         }
         return added;
+        } finally {
+            isScanningLibrary = false;
+        }
     }
 
     async function fetchAlbumMetadata(album) {
@@ -4375,7 +4492,7 @@ div.strip {
         modal.querySelector('#nexus-turbo-history-export').addEventListener('click', () => {
             const payload = {
                 generator: 'Turbo.cr Workspace by ervss',
-                version: '2.0.0',
+                version: '2.0.1',
                 exportedAt: new Date().toISOString(),
                 albums,
             };
@@ -5182,7 +5299,24 @@ div.strip {
         if (isLibraryPage()) {
             scanLibraryAlbums();
             ensureLibraryToolbar();
-            const obs = new MutationObserver(() => scanLibraryAlbums());
+            let libTimer = null;
+            const obs = new MutationObserver((mutations) => {
+                const isOurOnly = mutations.every(m => {
+                    const t = m.target;
+                    return t && t.closest && (
+                        t.closest('#nexus-turbo-toolbar') ||
+                        t.closest('.nexus-turbo-album-badge') ||
+                        t.closest('.nexus-turbo-album-chk-wrap') ||
+                        t.closest('.nexus-turbo-badge-peek') ||
+                        t.closest('#nexus-turbo-peek-modal') ||
+                        t.closest('#nexus-turbo-split-modal') ||
+                        t.closest('#nexus-turbo-history-modal')
+                    );
+                });
+                if (isOurOnly) return;
+                clearTimeout(libTimer);
+                libTimer = setTimeout(() => scanLibraryAlbums(), 200);
+            });
             obs.observe(document.body, { childList: true, subtree: true });
         } else if (isAlbumPage()) {
             scanRows();
