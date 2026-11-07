@@ -1,15 +1,21 @@
 # Turbo.cr Library & Album Workspace (Standalone Edition)
 
-[![Version](https://img.shields.io/badge/version-2.1.0-22c55e.svg)](https://github.com/ervss/turbo-cr-workspace)
+[![Version](https://img.shields.io/badge/version-2.2.0-22c55e.svg)](https://github.com/ervss/turbo-cr-workspace)
 [![Author](https://img.shields.io/badge/author-ervss-8b5cf6.svg)](https://github.com/ervss)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Install Userscript](https://img.shields.io/badge/Install-Tampermonkey%20%2F%20Violentmonkey-brightgreen?logo=tampermonkey)](https://raw.githubusercontent.com/ervss/turbo-cr-workspace/main/turbo-library-workspace-standalone.user.js)
 
 Created by **[ervss](https://github.com/ervss)** — **Turbo.cr Workspace** is a high-performance, standalone userscript that transforms [Turbo.cr](https://turbo.cr/library) into an ultra-responsive, cinema-widescreen media exploration and curation workspace.
 
-This **Standalone Edition (v2.1.0)** runs **100% inside your browser**—no Chrome extension runtime, local Python server, or companion apps required.
+This **Standalone Edition (v2.2.0)** runs **100% inside your browser**—no Chrome extension runtime, local Python server, or companion apps required.
 
-### 🆕 What's New in v2.1.0
+### 🆕 What's New in v2.2.0
+- 🖥️ **Ultra-Wide Widescreen Gallery (`86vw` default + `96vw` ↔ Wide Mode):** Removed the fixed `1620px` width bottleneck so Quick Peek and Merged Gallery dynamically span **86% of your browser window** on 2K/4K/ultrawide displays, plus a one-click **`↔ Wide`** button in the modal header to expand to **96% of the viewport**.
+- 🖼️ **True 16:9 Uncropped Video Thumbnails & Unclipped Action Bars:** Removed the artificial `max-height: 180px` thumbnail cap that squashed wide cards into narrow strips, and added `grid-auto-rows: max-content` so bottom action buttons (`▶ Play`, `📋 Link`, `↗`) are never clipped off in multi-row galleries.
+- ▦ **5-Column (`5x3`) Layout + Smart Default:** Added a new **`▦ 5x3`** 5-column layout alongside `▤ 4x3`, `⊞ 3x2`, `☷ 2x2`, and `☰ List` (defaults to `4x3` on widescreen monitors).
+- 🎛️ **In-Modal Sorting, Source Album Filter & Per-Video Quality Badges:** Sort videos inside Quick Peek / Merged Gallery by *Longest/Shortest Duration*, *Largest Size*, *Highest Bitrate*, *Name*, or *Album Name*, filter by individual source albums via a dropdown, and see per-video bitrate quality badges (`4K UHD`, `1080p`, `720p`, `SD`) directly on every thumbnail.
+
+### What Was New in v2.1.0
 - 📂 **Merged Multi-Album Gallery ("Spoločný Album"):** Select multiple albums on `/library` and click the new prominent **📂 Merged Gallery (<span id="nexus-turbo-merged-count">X</span>)** button to aggregate all video files from all selected folders into a unified interactive Quick Peek gallery! Supports multi-layout switching (`3x2`, `4x3`, `2x2`, `list`), parent album tags on every video, combined search filtering, multi-video Split-Screen wall, and bulk `.M3U`/`.JSON` exports.
 - 🎯 **Fixed Card Checkbox Selector & Deselection:** Resolved event capture conflicts on album card thumbnails. Clicking the top-left checkbox wrapper now reliably selects and deselects the album with visual feedback (`[✔]` badge with emerald glow) across all browsers and userscript managers without triggering link navigation.
 - ⌨️ **Universal Escape Key Handler:** Pressing <kbd>Esc</kbd> now closes active modals (Quick Peek, Merged Gallery, Split-Screen, History, Help) even if an input field currently has keyboard focus.

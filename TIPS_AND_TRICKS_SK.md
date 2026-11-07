@@ -1,10 +1,32 @@
 # Turbo.cr Workspace (Samostatná verzia) — Tipy, triky a novinky
 
-Tento návod a prehľad funkcií je určený pre používateľov **Turbo.cr Workspace (Standalone Edition v2.1.0)** od **[ervss](https://github.com/ervss)**.
+Tento návod a prehľad funkcií je určený pre používateľov **Turbo.cr Workspace (Standalone Edition v2.2.0)** od **[ervss](https://github.com/ervss)**.
 
 ---
 
-## 🆕 Čo je nové vo verzii 2.1.0?
+## 🆕 Čo je nové vo verzii 2.2.0?
+
+1. **🖥️ Širokouhlý režim okna (86 % až 96 % šírky obrazovky):**
+   - Pôvodné okno galérie malo pevný strop `1620px`, čo na veľkých 2K (2560×1440) a 4K monitoroch nechávalo po bokoch prázdne pásy.
+   - Od verzie `2.2.0` sa Spoločný Album (Merged Gallery) aj Quick Peek automaticky roztiahnu na **86 % šírky prehliadača (`86vw`)** a v pravom hornom rohu pribudlo tlačidlo **`↔ Wide`**, ktorým okno jedným klikom roztiahneš až na **96 % šírky obrazovky (`96vw`)**!
+   - Zároveň bola odstránená aj 390px rezerva napravo na hlavnej stránke `/library`, takže aj základná mriežka albumov teraz využíva plnú šírku okna.
+
+2. **🖼️ Skutočný pomer strán 16:9 a oprava orezávania kariet:**
+   - Odstránený obmedzovač `max-height: 180px`, ktorý na širokých monitoroch splošťoval náhľady do úzkych pásikov a orezával vrch a spodok fotiek. Každý náhľad má teraz čistý, neorezaný **pomer strán 16:9**.
+   - Opravené stláčanie riadkov v CSS Grid (`grid-auto-rows: max-content`), vďaka čomu už spodná lišta karty s tlačidlami **`▶ Play`**, **`📋 Link`** a **`↗`** nikdy nezmizne a neoreže sa ani pri stovkách videí.
+
+3. **▦ Nové rozloženie `5x3` (5 stĺpcov) + inteligentné predvolené zobrazenie:**
+   - Pre veľké monitory pribudol režim **`▦ 5x3` (5 stĺpcov)** popri `▤ 4x3`, `⊞ 3x2`, `☷ 2x2` a `☰ List`. Na širokých obrazovkách sa automaticky predvolí `4x3`.
+
+4. **🎛️ Triedenie, filter podľa zdrojového albumu a štítky kvality na každom videu:**
+   - Priamo v hornej lište Spoločného Albumu môžeš videá zoradiť podľa **najdlhšieho/najkratšieho trvania**, **najväčšej veľkosti (MB)**, **najvyššieho bitrate (kvality)**, **názvu A–Z** alebo **názvu albumu**.
+   - V Spoločnom Albume pribudol rozbaľovací filter **`📁 All Albums`**, ktorým si môžeš kedykoľvek vyfiltrovať videá len z konkrétneho vybraného albumu.
+   - Každé video má v pravom hornom rohu náhľadu vlastný štítok kvality (`4K UHD`, `1080p`, `720p`, `SD`).
+   - Kliknutím priamo na plochu náhľadu (mimo tlačidla Play) pohodlne označíš alebo odznačíš kartu videa (vrátane podpory `Shift + Klik`).
+
+---
+
+## Čo pribudlo vo verzii 2.1.0?
 
 1. **📂 Funkcia "Spoločný Album / Galéria" (Merged Gallery):**
    - Na stránke `/library` si zaškrtni ľubovoľné albumy (napr. 5, 10 alebo všetkých 15 na stránke pomocou tlačidiel `TOP 20` alebo `Visible`).

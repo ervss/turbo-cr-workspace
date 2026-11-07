@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Turbo.cr Library & Album Workspace (Standalone Edition)
 // @namespace    https://github.com/ervss/turbo-cr-workspace
-// @version      2.1.0
-// @description  Standalone power-user workspace for Turbo.cr: cinema widescreen grid, multi-page library scanner, bitrate quality tags (4K/1080p/720p/SD), Quick Peek & Merged Multi-Album Gallery, direct stream resolver, built-in multi-video split-screen, .M3U8 playlist & JSON export, and offline IndexedDB history vault. No external server required!
+// @version      2.2.0
+// @description  Standalone power-user workspace for Turbo.cr: cinema widescreen grid, multi-page library scanner, bitrate quality tags (4K/1080p/720p/SD), Ultra-Wide Quick Peek & Merged Multi-Album Gallery (5x3/4x3/3x2/2x2), direct stream resolver, built-in multi-video split-screen, .M3U8 playlist & JSON export, and offline IndexedDB history vault. No external server required!
 // @author       ervss (https://github.com/ervss)
 // @license      MIT
 // @homepageURL  https://github.com/ervss/turbo-cr-workspace
@@ -50,7 +50,7 @@
     if (!/(^|\.)turbo\.cr$/i.test(location.hostname)) return;
 
     console.log(
-        '%c[Turbo Workspace v2.1.0 by ervss]%c Loaded — Standalone Edition (https://github.com/ervss/turbo-cr-workspace)',
+        '%c[Turbo Workspace v2.2.0 by ervss]%c Loaded — Standalone Edition (https://github.com/ervss/turbo-cr-workspace)',
         'color: #58a6ff; font-weight: bold',
         'color: #aaa'
     );
@@ -71,7 +71,8 @@
     const STORAGE_MIN_KEY = 'turbo_ws_minimized';
     const STORAGE_GALLERY_KEY = 'turbo_ws_gallery_open';
     const STORAGE_INFINITE_KEY = 'turbo_ws_infinite_scroll';
-    const STORAGE_PEEK_LAYOUT_KEY = 'turbo_ws_peek_layout';
+    const STORAGE_PEEK_LAYOUT_KEY = 'turbo_ws_peek_layout_v2';
+    const STORAGE_PEEK_WIDE_KEY = 'turbo_ws_peek_wide';
 
     // ── 2. State ───────────────────────────────────────────────────
     const state = {
@@ -2444,6 +2445,301 @@ div.strip {
     border-color: #58a6ff !important;
     color: #fff !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   v2.2.0 ULTRA-WIDE GALLERY & TRUE 16:9 PROPORTIONAL CARD OVERRIDES
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* 1. Full Browser Width on Main /library Page (no 390px right dead zone) */
+main,
+main.max-w-6xl,
+div.max-w-6xl,
+.max-w-6xl,
+.w-full.max-w-6xl,
+.min-h-full > main {
+    max-width: calc(100vw - 48px) !important;
+    width: calc(100vw - 48px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    padding-bottom: 120px !important;
+    box-sizing: border-box !important;
+}
+
+#grid,
+.grid:has(> a.alb),
+#grid.grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)) !important;
+    gap: 20px !important;
+    width: 100% !important;
+}
+
+a.alb .strip,
+.alb .strip,
+div.strip {
+    aspect-ratio: 16 / 10 !important;
+    height: auto !important;
+    min-height: 205px !important;
+    max-height: 255px !important;
+    position: relative !important;
+    background: #090d14 !important;
+    overflow: hidden !important;
+}
+
+/* 2. Quick Peek & Merged Gallery Modal: 86vw default + 96vw Ultra-Wide */
+#nexus-turbo-peek-modal .nexus-turbo-peek-dialog,
+.nexus-turbo-peek-dialog {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 86vw !important;
+    max-width: 96vw !important;
+    height: 92vh !important;
+    max-height: 95vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    border: 1px solid rgba(255, 255, 255, 0.22) !important;
+    border-radius: 14px !important;
+    background: #0d1117 !important;
+    box-shadow: 0 32px 100px rgba(0, 0, 0, 0.95) !important;
+    z-index: 2147483645 !important;
+    transition: width 0.2s ease, height 0.2s ease !important;
+}
+
+#nexus-turbo-peek-modal .nexus-turbo-peek-dialog.is-ultrawide,
+.nexus-turbo-peek-dialog.is-ultrawide {
+    width: 96vw !important;
+    max-width: 98vw !important;
+    height: 95vh !important;
+    max-height: 97vh !important;
+}
+
+/* 3. Grid Container inside Quick Peek: never compress rows, support 5x3 / 4x3 / 3x2 / 2x2 */
+#nexus-turbo-peek-modal .nexus-turbo-peek-grid,
+.nexus-turbo-peek-grid {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    padding: 18px 22px !important;
+    box-sizing: border-box !important;
+    grid-auto-rows: max-content !important;
+    align-content: start !important;
+    align-items: stretch !important;
+}
+
+#nexus-turbo-peek-modal .nexus-turbo-peek-grid[data-layout="5x3"],
+.nexus-turbo-peek-grid[data-layout="5x3"] {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+}
+
+#nexus-turbo-peek-modal .nexus-turbo-peek-grid[data-layout="4x3"],
+.nexus-turbo-peek-grid[data-layout="4x3"] {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+}
+
+#nexus-turbo-peek-modal .nexus-turbo-peek-grid[data-layout="3x2"],
+.nexus-turbo-peek-grid[data-layout="3x2"] {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 20px !important;
+}
+
+#nexus-turbo-peek-modal .nexus-turbo-peek-grid[data-layout="2x2"],
+.nexus-turbo-peek-grid[data-layout="2x2"] {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 22px !important;
+}
+
+@media (max-width: 1400px) {
+    #nexus-turbo-peek-modal .nexus-turbo-peek-grid[data-layout="5x3"] {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+}
+@media (max-width: 1100px) {
+    #nexus-turbo-peek-modal .nexus-turbo-peek-grid[data-layout="5x3"],
+    #nexus-turbo-peek-modal .nexus-turbo-peek-grid[data-layout="4x3"] {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+}
+@media (max-width: 780px) {
+    #nexus-turbo-peek-modal .nexus-turbo-peek-grid[data-layout="5x3"],
+    #nexus-turbo-peek-modal .nexus-turbo-peek-grid[data-layout="4x3"],
+    #nexus-turbo-peek-modal .nexus-turbo-peek-grid[data-layout="3x2"] {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+/* 4. Video Cards & 16:9 Thumbnails: no max-height crop, no clipped footer buttons */
+#nexus-turbo-peek-modal .nexus-turbo-peek-card,
+.nexus-turbo-peek-card {
+    position: relative !important;
+    background: #141a24 !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    height: auto !important;
+    min-height: 0 !important;
+    box-sizing: border-box !important;
+    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+#nexus-turbo-peek-modal .nexus-turbo-peek-card:hover,
+.nexus-turbo-peek-card:hover {
+    border-color: rgba(88, 166, 255, 0.6) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65) !important;
+}
+
+#nexus-turbo-peek-modal .nexus-turbo-peek-card:not([style]) .nexus-turbo-peek-poster,
+.nexus-turbo-peek-card .nexus-turbo-peek-poster {
+    position: relative !important;
+    width: 100% !important;
+    aspect-ratio: 16 / 9 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    background: #090d13 !important;
+    overflow: hidden !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+}
+
+.nexus-turbo-peek-card .nexus-turbo-peek-poster img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
+    transition: transform 0.25s ease !important;
+}
+
+.nexus-turbo-peek-card:hover .nexus-turbo-peek-poster img {
+    transform: scale(1.03) !important;
+}
+
+#nexus-turbo-peek-modal .nexus-turbo-peek-card-body,
+.nexus-turbo-peek-card-body {
+    padding: 10px 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    gap: 6px !important;
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    background: #10151f !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+}
+
+#nexus-turbo-peek-modal .nexus-turbo-peek-card-actions,
+.nexus-turbo-peek-card-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    height: 30px !important;
+    min-height: 30px !important;
+    margin-top: 4px !important;
+    flex-shrink: 0 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+#nexus-turbo-peek-modal .nexus-turbo-peek-card-actions .nexus-turbo-btn-sub {
+    flex: 1 1 auto !important;
+    height: 28px !important;
+    padding: 0 8px !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    border-radius: 6px !important;
+    background: rgba(56, 139, 253, 0.14) !important;
+    border: 1px solid rgba(88, 166, 255, 0.3) !important;
+    color: #c9d1d9 !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+}
+
+#nexus-turbo-peek-modal .nexus-turbo-peek-card-actions .nexus-turbo-btn-sub:hover {
+    background: #1f6feb !important;
+    border-color: #58a6ff !important;
+    color: #fff !important;
+}
+
+/* 5. Quality Overlay Badge & Toolbar Selects inside Quick Peek / Merged Gallery */
+.nexus-turbo-peek-qbadge-overlay {
+    position: absolute !important;
+    top: 8px !important;
+    right: 8px !important;
+    z-index: 6 !important;
+    padding: 2px 7px !important;
+    border-radius: 5px !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.3px !important;
+    pointer-events: none !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.65) !important;
+}
+.nexus-turbo-peek-qbadge {
+    padding: 1px 6px !important;
+    border-radius: 4px !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+}
+.nexus-turbo-peek-qbadge-overlay.badge-quality-4k,
+.nexus-turbo-peek-qbadge.badge-quality-4k {
+    background: linear-gradient(135deg, #7c3aed, #db2777) !important;
+    color: #fff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+.nexus-turbo-peek-qbadge-overlay.badge-quality-1080p,
+.nexus-turbo-peek-qbadge.badge-quality-1080p {
+    background: linear-gradient(135deg, #0284c7, #059669) !important;
+    color: #fff !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+}
+.nexus-turbo-peek-qbadge-overlay.badge-quality-720p,
+.nexus-turbo-peek-qbadge.badge-quality-720p {
+    background: linear-gradient(135deg, #2563eb, #4f46e5) !important;
+    color: #fff !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+.nexus-turbo-peek-qbadge-overlay.badge-quality-sd,
+.nexus-turbo-peek-qbadge.badge-quality-sd {
+    background: rgba(51, 65, 85, 0.9) !important;
+    color: #cbd5e1 !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.nexus-turbo-peek-select {
+    background: #161b22 !important;
+    color: #c9d1d9 !important;
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    border-radius: 6px !important;
+    padding: 5px 10px !important;
+    font-size: 12px !important;
+    cursor: pointer !important;
+    outline: none !important;
+}
+.nexus-turbo-peek-select:hover,
+.nexus-turbo-peek-select:focus {
+    border-color: #58a6ff !important;
+}
 `;
         (document.head || document.documentElement).appendChild(style);
     }
@@ -2844,6 +3140,20 @@ div.strip {
                 tooltip: `Average bitrate: ${avgBitrateMbps.toFixed(1)} Mbps (Standard/Low quality)`
             };
         }
+    }
+
+    function getSingleFileQuality(f) {
+        if (!f || !f.size) return null;
+        let mbps = 0;
+        if (f.dur > 0) {
+            mbps = ((f.size * 8) / f.dur) / 1000000;
+        } else {
+            mbps = (((f.size / (1024 * 1024)) * 8) / 45);
+        }
+        if (mbps >= 12.0) return { label: '4K UHD', badgeClass: 'badge-quality-4k', mbps };
+        if (mbps >= 3.5) return { label: '1080p', badgeClass: 'badge-quality-1080p', mbps };
+        if (mbps >= 1.6) return { label: '720p', badgeClass: 'badge-quality-720p', mbps };
+        return { label: 'SD', badgeClass: 'badge-quality-sd', mbps };
     }
 
     // ── 10. HTML Parser (const FILES) ──────────────────────────────
@@ -3287,31 +3597,38 @@ div.strip {
             const oldModal = document.getElementById(PEEK_ID);
             if (oldModal) oldModal.remove();
 
-            let currentLayout = localStorage.getItem(STORAGE_PEEK_LAYOUT_KEY) || '3x2';
+            let currentLayout = localStorage.getItem(STORAGE_PEEK_LAYOUT_KEY) || (window.innerWidth >= 1400 ? '4x3' : '3x2');
+            let isUltraWide = localStorage.getItem(STORAGE_PEEK_WIDE_KEY) === 'true';
             let peekSearchQuery = '';
-            let peekVisibleLimit = 100;
-            const PEEK_BATCH_SIZE = 100;
+            let peekSortBy = 'default';
+            let peekAlbumFilter = 'all';
+            let peekVisibleLimit = 120;
+            const PEEK_BATCH_SIZE = 120;
 
             const allFiles = Array.isArray(album.files) ? album.files : [];
             allFiles.forEach((f) => {
                 if (f.selected === undefined) f.selected = true;
             });
 
+            const uniqueAlbumTitles = [...new Set(allFiles.map(f => f.albumTitle).filter(Boolean))];
+
             const modal = document.createElement('div');
             modal.id = PEEK_ID;
             modal.innerHTML = `
                 <div class="nexus-turbo-peek-backdrop" data-close-peek></div>
-                <div class="nexus-turbo-peek-dialog" role="dialog" aria-modal="true">
+                <div class="nexus-turbo-peek-dialog ${isUltraWide ? 'is-ultrawide' : ''}" role="dialog" aria-modal="true">
                     <!-- Header -->
                     <div class="nexus-turbo-peek-header">
                         <h3>📂 ${escapeHtml(album.title)} <span style="font-size:12px;color:#8b949e;font-weight:normal;">(${album.videoCount || allFiles.length} videos · ${formatBytes(album.totalBytes)})</span></h3>
-                        <div style="display:flex;align-items:center;gap:12px;">
+                        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
                             <div class="nexus-turbo-layout-group">
-                                <button type="button" class="nexus-turbo-layout-btn ${currentLayout === '3x2' ? 'is-active' : ''}" data-peek-layout="3x2" title="3 columns">▦ 3x2</button>
-                                <button type="button" class="nexus-turbo-layout-btn ${currentLayout === '4x3' ? 'is-active' : ''}" data-peek-layout="4x3" title="4 columns">▤ 4x3</button>
-                                <button type="button" class="nexus-turbo-layout-btn ${currentLayout === '2x2' ? 'is-active' : ''}" data-peek-layout="2x2" title="2 columns (large)">☷ 2x2</button>
-                                <button type="button" class="nexus-turbo-layout-btn ${currentLayout === 'list' ? 'is-active' : ''}" data-peek-layout="list" title="List view">☰ List</button>
+                                <button type="button" class="nexus-turbo-layout-btn ${currentLayout === '5x3' ? 'is-active' : ''}" data-peek-layout="5x3" title="5 columns (Ultra-Wide)">▦ 5x3</button>
+                                <button type="button" class="nexus-turbo-layout-btn ${currentLayout === '4x3' ? 'is-active' : ''}" data-peek-layout="4x3" title="4 columns (Widescreen)">▤ 4x3</button>
+                                <button type="button" class="nexus-turbo-layout-btn ${currentLayout === '3x2' ? 'is-active' : ''}" data-peek-layout="3x2" title="3 columns (Balanced)">⊞ 3x2</button>
+                                <button type="button" class="nexus-turbo-layout-btn ${currentLayout === '2x2' ? 'is-active' : ''}" data-peek-layout="2x2" title="2 columns (Large)">☷ 2x2</button>
+                                <button type="button" class="nexus-turbo-layout-btn ${currentLayout === 'list' ? 'is-active' : ''}" data-peek-layout="list" title="Compact List view">☰ List</button>
                             </div>
+                            <button type="button" class="nexus-turbo-layout-btn ${isUltraWide ? 'is-active' : ''}" id="nexus-turbo-peek-wide-btn" title="Toggle Ultra-Wide 96% Window Mode">↔ Wide</button>
                             <button type="button" class="nexus-turbo-min-btn" data-close-peek style="font-size:18px;">✕</button>
                         </div>
                     </div>
@@ -3324,7 +3641,22 @@ div.strip {
                                 <span>Select All</span>
                             </label>
                             <span id="nexus-turbo-peek-count" style="font-size:11.5px;color:#8b949e;">0 / 0 selected</span>
-                            <input type="text" id="nexus-turbo-peek-search" class="nexus-turbo-peek-search-input" placeholder="🔍 Filter in album...">
+                            <input type="text" id="nexus-turbo-peek-search" class="nexus-turbo-peek-search-input" placeholder="🔍 Filter videos...">
+                            <select id="nexus-turbo-peek-sort" class="nexus-turbo-peek-select" title="Sort videos inside gallery">
+                                <option value="default">Sort: Default</option>
+                                <option value="dur_desc">⏱️ Longest Duration</option>
+                                <option value="dur_asc">⏱️ Shortest Duration</option>
+                                <option value="size_desc">📦 Largest Size</option>
+                                <option value="bitrate_desc">💎 Highest Bitrate</option>
+                                <option value="name_asc">🔤 Name (A–Z)</option>
+                                ${uniqueAlbumTitles.length > 1 ? '<option value="album_asc">📁 Album Name</option>' : ''}
+                            </select>
+                            ${uniqueAlbumTitles.length > 1 ? `
+                            <select id="nexus-turbo-peek-album-filter" class="nexus-turbo-peek-select" title="Filter by source album">
+                                <option value="all">📁 All Albums (${uniqueAlbumTitles.length})</option>
+                                ${uniqueAlbumTitles.map(t => `<option value="${escapeHtml(t)}">📁 ${escapeHtml(t)}</option>`).join('')}
+                            </select>
+                            ` : ''}
                         </div>
 
                         <div class="nexus-turbo-peek-actions">
@@ -3354,6 +3686,7 @@ div.strip {
                 </div>
             `;
 
+        const dialogEl = modal.querySelector('.nexus-turbo-peek-dialog');
         const gridEl = modal.querySelector('#nexus-turbo-peek-grid');
         const countEl = modal.querySelector('#nexus-turbo-peek-count');
         const splitBtn = modal.querySelector('#nexus-turbo-peek-btn-split');
@@ -3364,8 +3697,20 @@ div.strip {
         const selectAllChk = modal.querySelector('#nexus-turbo-peek-select-all');
         const paginationContainer = modal.querySelector('#nexus-turbo-peek-pagination-container');
         const searchInput = modal.querySelector('#nexus-turbo-peek-search');
+        const sortSelect = modal.querySelector('#nexus-turbo-peek-sort');
+        const albumFilterSelect = modal.querySelector('#nexus-turbo-peek-album-filter');
+        const wideBtn = modal.querySelector('#nexus-turbo-peek-wide-btn');
 
         let lastPeekIndex = -1;
+
+        if (wideBtn && dialogEl) {
+            wideBtn.addEventListener('click', () => {
+                isUltraWide = !isUltraWide;
+                localStorage.setItem(STORAGE_PEEK_WIDE_KEY, String(isUltraWide));
+                dialogEl.classList.toggle('is-ultrawide', isUltraWide);
+                wideBtn.classList.toggle('is-active', isUltraWide);
+            });
+        }
 
         function updatePeekToolbar() {
             const files = album.files || [];
@@ -3393,6 +3738,21 @@ div.strip {
             });
         }
 
+        if (sortSelect) {
+            sortSelect.addEventListener('change', (e) => {
+                peekSortBy = e.target.value || 'default';
+                renderPeekGrid();
+            });
+        }
+
+        if (albumFilterSelect) {
+            albumFilterSelect.addEventListener('change', (e) => {
+                peekAlbumFilter = e.target.value || 'all';
+                peekVisibleLimit = PEEK_BATCH_SIZE;
+                renderPeekGrid();
+            });
+        }
+
         function renderPeekGrid() {
             gridEl.dataset.layout = currentLayout;
             const allFiles = album.files || [];
@@ -3400,13 +3760,37 @@ div.strip {
                 if (f.selected === undefined) f.selected = true;
             });
             const query = peekSearchQuery.toLowerCase();
-            const filteredFiles = query
-                ? allFiles.filter(f => (f.name || '').toLowerCase().includes(query) || (f.id || '').toLowerCase().includes(query) || (f.albumTitle || '').toLowerCase().includes(query))
-                : allFiles;
+            let filteredFiles = allFiles.filter((f) => {
+                if (peekAlbumFilter !== 'all' && f.albumTitle !== peekAlbumFilter) return false;
+                if (query) {
+                    return (
+                        (f.name || '').toLowerCase().includes(query) ||
+                        (f.id || '').toLowerCase().includes(query) ||
+                        (f.albumTitle || '').toLowerCase().includes(query)
+                    );
+                }
+                return true;
+            });
+
+            if (peekSortBy !== 'default') {
+                filteredFiles = [...filteredFiles].sort((a, b) => {
+                    if (peekSortBy === 'dur_desc') return (b.dur || 0) - (a.dur || 0);
+                    if (peekSortBy === 'dur_asc') return (a.dur || 0) - (b.dur || 0);
+                    if (peekSortBy === 'size_desc') return (b.size || 0) - (a.size || 0);
+                    if (peekSortBy === 'bitrate_desc') {
+                        const brA = a.dur > 0 ? a.size / a.dur : 0;
+                        const brB = b.dur > 0 ? b.size / b.dur : 0;
+                        return brB - brA;
+                    }
+                    if (peekSortBy === 'name_asc') return (a.name || '').localeCompare(b.name || '');
+                    if (peekSortBy === 'album_asc') return (a.albumTitle || '').localeCompare(b.albumTitle || '');
+                    return 0;
+                });
+            }
 
             if (!filteredFiles.length) {
                 gridEl.innerHTML = `<div style="padding:40px;text-align:center;color:#8b949e">
-                    ${query ? 'No matching videos found for this filter.' : 'No videos found in this album.'}
+                    ${query || peekAlbumFilter !== 'all' ? 'No matching videos found for this filter.' : 'No videos found in this album.'}
                 </div>`;
                 if (paginationContainer) paginationContainer.innerHTML = '';
                 updatePeekToolbar();
@@ -3416,10 +3800,12 @@ div.strip {
             const visibleFiles = filteredFiles.slice(0, peekVisibleLimit);
 
             if (currentLayout === 'list') {
-                gridEl.innerHTML = visibleFiles.map((f, idx) => `
+                gridEl.innerHTML = visibleFiles.map((f, idx) => {
+                    const qBadge = getSingleFileQuality(f);
+                    return `
                     <div class="nexus-turbo-peek-item ${f.selected ? 'is-selected' : ''}" data-file-id="${escapeHtml(f.id)}" data-file-index="${idx}">
                         <input type="checkbox" class="nexus-turbo-peek-chk file-chk" ${f.selected ? 'checked' : ''} data-file-chk="${escapeHtml(f.id)}">
-                        <div class="nexus-turbo-peek-poster" style="width:80px;height:48px;flex-shrink:0;cursor:pointer;" data-play-file="${escapeHtml(f.id)}">
+                        <div class="nexus-turbo-peek-poster" style="width:96px;height:54px;flex-shrink:0;cursor:pointer;" data-play-file="${escapeHtml(f.id)}">
                             <img src="${escapeHtml(f.thumb || '')}" alt="" onerror="this.style.display='none'">
                             <span class="nexus-turbo-peek-play-btn" style="width:28px;height:28px;font-size:12px;">▶</span>
                         </div>
@@ -3431,20 +3817,25 @@ div.strip {
                             <div class="nexus-turbo-peek-sub">
                                 <span>📦 ${formatBytes(f.size)}</span>
                                 <span>⏱️ ${f.dur > 0 ? formatDuration(f.dur) : '—'}</span>
+                                ${qBadge ? `<span class="nexus-turbo-peek-qbadge ${qBadge.badgeClass}">${qBadge.label}</span>` : ''}
                             </div>
                         </div>
                         <button type="button" class="nexus-turbo-btn-sub" data-play-file="${escapeHtml(f.id)}">▶ Play</button>
                         <button type="button" class="nexus-turbo-btn-sub" data-copy-single="${escapeHtml(f.id)}">📋 Link</button>
                         <a href="https://turbo.cr/v/${escapeHtml(f.id)}" target="_blank" class="nexus-turbo-peek-btn-open">↗</a>
                     </div>
-                `).join('');
+                `;
+                }).join('');
             } else {
-                gridEl.innerHTML = visibleFiles.map((f, idx) => `
+                gridEl.innerHTML = visibleFiles.map((f, idx) => {
+                    const qBadge = getSingleFileQuality(f);
+                    return `
                     <div class="nexus-turbo-peek-card ${f.selected ? 'is-selected' : ''}" data-file-id="${escapeHtml(f.id)}" data-file-index="${idx}">
                         <div class="nexus-turbo-peek-poster">
-                            <div class="nexus-turbo-peek-chk-wrap">
+                            <div class="nexus-turbo-peek-chk-wrap" title="Click to select / Shift+Click for range">
                                 <input type="checkbox" class="nexus-turbo-peek-chk file-chk" ${f.selected ? 'checked' : ''} data-file-chk="${escapeHtml(f.id)}">
                             </div>
+                            ${qBadge ? `<div class="nexus-turbo-peek-qbadge-overlay ${qBadge.badgeClass}" title="${qBadge.mbps.toFixed(1)} Mbps">${qBadge.label}</div>` : ''}
                             <img src="${escapeHtml(f.thumb || '')}" alt="" loading="lazy" onerror="this.src='https://turbo.cr/favicon.ico'">
                             <div class="nexus-turbo-peek-play-btn" data-play-file="${escapeHtml(f.id)}" title="Play ${escapeHtml(f.name)}">
                                 ▶
@@ -3459,6 +3850,9 @@ div.strip {
                             ${f.albumTitle ? `<div class="nexus-turbo-peek-card-album" title="Album: ${escapeHtml(f.albumTitle)}">📁 ${escapeHtml(f.albumTitle)}</div>` : ''}
                             <div class="nexus-turbo-peek-card-title" title="${escapeHtml(f.name)}">${escapeHtml(f.name)}</div>
                             <div class="nexus-turbo-peek-card-actions">
+                                <button type="button" class="nexus-turbo-btn-sub" data-play-file="${escapeHtml(f.id)}" title="Play video in popup player">
+                                    ▶ Play
+                                </button>
                                 <button type="button" class="nexus-turbo-btn-sub" data-copy-single="${escapeHtml(f.id)}" title="Copy Watch URL">
                                     📋 Link
                                 </button>
@@ -3468,7 +3862,8 @@ div.strip {
                             </div>
                         </div>
                     </div>
-                `).join('');
+                `;
+                }).join('');
             }
 
             if (paginationContainer) {
@@ -3585,6 +3980,42 @@ div.strip {
                 const fId = copyBtn.getAttribute('data-copy-single');
                 copyToClipboard(`https://turbo.cr/v/${fId}`, 'Watch URL copied!');
                 return;
+            }
+
+            // Clicking on the thumbnail poster (outside play button & checkbox) toggles selection
+            const poster = e.target.closest('.nexus-turbo-peek-poster');
+            if (poster && !e.target.closest('[data-play-file]')) {
+                const card = poster.closest('.nexus-turbo-peek-card');
+                const box = card?.querySelector('.file-chk');
+                if (box) {
+                    box.checked = !box.checked;
+                    const fId = box.getAttribute('data-file-chk');
+                    const currIdx = parseInt(card.dataset.fileIndex || '-1', 10);
+                    const file = (album.files || []).find(f => f.id === fId);
+                    if (file) {
+                        file.selected = box.checked;
+                        card.classList.toggle('is-selected', file.selected);
+                        if (e.shiftKey && lastPeekIndex !== -1 && currIdx !== -1) {
+                            const low = Math.min(lastPeekIndex, currIdx);
+                            const high = Math.max(lastPeekIndex, currIdx);
+                            const targetState = file.selected;
+                            const visibleCards = gridEl.querySelectorAll('.nexus-turbo-peek-card, .nexus-turbo-peek-item');
+                            visibleCards.forEach(c => {
+                                const cIdx = parseInt(c.dataset.fileIndex || '-1', 10);
+                                if (cIdx >= low && cIdx <= high) {
+                                    const cId = c.dataset.fileId;
+                                    const fObj = (album.files || []).find(x => x.id === cId);
+                                    if (fObj) fObj.selected = targetState;
+                                    const b = c.querySelector('.file-chk');
+                                    if (b) b.checked = targetState;
+                                    c.classList.toggle('is-selected', targetState);
+                                }
+                            });
+                        }
+                        lastPeekIndex = currIdx;
+                        updatePeekToolbar();
+                    }
+                }
             }
         });
 

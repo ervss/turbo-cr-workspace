@@ -176,6 +176,33 @@ const path = require('node:path');
     const albumBadge = mergedCards.nth(0).locator('.nexus-turbo-peek-card-album');
     assert.strictEqual(await albumBadge.isVisible(), true, 'Video cards in merged view must display parent album tag');
 
+    // Verify modal width occupies ~86% of viewport width (and 96% when Wide is toggled)
+    const dialogBox = await mergedModal.locator('.nexus-turbo-peek-dialog').boundingBox();
+    const vpSize = page.viewportSize();
+    assert(dialogBox.width >= vpSize.width * 0.82, `Modal dialog width (${dialogBox.width}) should be >= 82% of viewport (${vpSize.width})`);
+
+    await mergedModal.locator('#nexus-turbo-peek-wide-btn').click();
+    await page.waitForTimeout(250);
+    const wideBox = await mergedModal.locator('.nexus-turbo-peek-dialog').boundingBox();
+    assert(wideBox.width >= vpSize.width * 0.93, `Ultra-Wide modal width (${wideBox.width}) should be >= 93% of viewport (${vpSize.width})`);
+    await mergedModal.locator('#nexus-turbo-peek-wide-btn').click();
+
+    // Verify card footer buttons (Play, Link, Open) are completely visible and not clipped by card bounds
+    const cardBox = await mergedCards.nth(0).boundingBox();
+    const actionsBox = await mergedCards.nth(0).locator('.nexus-turbo-peek-card-actions').boundingBox();
+    assert(actionsBox.y + actionsBox.height <= cardBox.y + cardBox.height + 2, 'Card action buttons must be fully inside card bounds (never clipped)');
+
+    // Test 5x3 layout switcher, sorting, and album filter dropdown in Merged View
+    await mergedModal.locator('[data-peek-layout="5x3"]').click();
+    assert.strictEqual(await mergedModal.locator('#nexus-turbo-peek-grid').getAttribute('data-layout'), '5x3');
+
+    const albumFilter = mergedModal.locator('#nexus-turbo-peek-album-filter');
+    assert.strictEqual(await albumFilter.isVisible(), true, 'Album filter dropdown must be visible in Merged Collection');
+    await albumFilter.selectOption('Mountain Trekking 4K');
+    assert.strictEqual(await mergedModal.locator('.nexus-turbo-peek-card').count(), 1, 'Album filter must narrow down to 1 video from second album');
+    await albumFilter.selectOption('all');
+    assert.strictEqual(await mergedModal.locator('.nexus-turbo-peek-card').count(), 3);
+
     // Test search filter in Merged View
     const searchInput = mergedModal.locator('#nexus-turbo-peek-search');
     await searchInput.fill('Beach');
